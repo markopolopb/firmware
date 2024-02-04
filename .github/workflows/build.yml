@@ -18,13 +18,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # Sigmastar [I6]
+          # Sigmastar [I3]
           - {"platform": "msc313e", "release": "lite"}
-
-          # Sigmastar [I6B]
-          - {"platform": "ssc333", "release": "lite"}
-
-
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
