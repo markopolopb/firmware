@@ -20,20 +20,20 @@ jobs:
         include:
           # Sigmastar [I3]
           - {"platform": "msc313e", "release": "lite"}
-    steps:
+steps:
       - name: Checkout source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
 
       - name: Setup ccache
         if: github.event_name != 'pull_request'
-        uses: actions/cache@v4
+        uses: actions/cache@v3
         with:
           path: /tmp/ccache
           key: ${{matrix.platform}}_${{matrix.release}}
 
       - name: Restore ccache
         if: github.event_name == 'pull_request'
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v3
         with:
           path: /tmp/ccache
           key: ${{matrix.platform}}_${{matrix.release}}
@@ -72,11 +72,29 @@ jobs:
           fi
 
       - name: Upload firmware
-        if: github.event_name != 'pull_request'
-        uses: ncipollo/release-action@v1
+        if: github.event_name != 'pull_request' && matrix.custom != 'onlyci'
+        uses: softprops/action-gh-release@v1
         with:
-          tag: ${{env.TAG_NAME}}
-          allowUpdates: true
-          artifacts: |
+          tag_name: ${{env.TAG_NAME}}
+          files: |
             ${{env.NORFW}}
             ${{env.NANDFW}}
+
+      - name: Send binary
+        if: github.event_name != 'pull_request' && matrix.custom != 'onlyci' && env.NORFW
+        run: |
+          TG_MSG="Commit: ${GIT_HASH}\nBranch: ${GIT_BRANCH}\nTag: ${TAG_NAME}\nTime: ${TIME}\n\n"
+          TG_ICON="\xE2\x9C\x85 GitHub Actions"
+          TG_HEADER=$(echo -e ${TG_MSG}${TG_ICON})
+          HTTP=$(curl ${TG_OPTIONS} -H "Content-Type: multipart/form-data" -X POST https://api.telegram.org/bot${TG_TOKEN}/sendDocument -F chat_id=${TG_CHANNEL} -F caption="${TG_HEADER}" -F document=@${NORFW})
+          echo Telegram response: ${HTTP}
+
+      - name: Send error
+        if: github.event_name != 'pull_request' && failure()
+        run: |
+          TG_WARN="Error: ${{matrix.platform}}_${{matrix.release}}\n"
+          TG_MSG="Commit: ${GIT_HASH}\nBranch: ${GIT_BRANCH}\nTag: ${TAG_NAME}\n\n"
+          TG_ICON="\xE2\x9A\xA0 GitHub Actions"
+          TG_HEADER=$(echo -e ${TG_WARN}${TG_MSG}${TG_ICON})
+          HTTP=$(curl ${TG_OPTIONS} -H "Content-Type: multipart/form-data" -X POST https://api.telegram.org/bot${TG_TOKEN}/sendMessage -F chat_id=${TG_CHANNEL} -F text="${TG_HEADER}")
+          echo Telegram response: ${HTTP}
