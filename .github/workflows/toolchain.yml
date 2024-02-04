@@ -15,12 +15,6 @@ jobs:
       matrix:
         platform:
           - msc313e
-          - msc316dc
-          - msc316dm
-          - ssc335
-          - ssc338q
-          - ssc377
-
 
     steps:
       - name: Checkout source
