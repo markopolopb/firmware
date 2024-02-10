@@ -1,0 +1,85 @@
+name: build
+on:
+  pull_request:
+    branches:
+      - master
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+env:
+  TAG_NAME: latest
+
+jobs:
+  buildroot:
+    name: Firmware
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Sigmastar [I6]
+          - {"platform": "msc313e", "release": "lite"}
+          - {"platform": "msc313e", "release": "ultimate"}
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Setup ccache
+        if: github.event_name != 'pull_request'
+        uses: actions/cache@v4
+        with:
+          path: /tmp/ccache
+          key: ${{matrix.platform}}_${{matrix.release}}
+
+      - name: Restore ccache
+        if: github.event_name == 'pull_request'
+        uses: actions/cache/restore@v4
+        with:
+          path: /tmp/ccache
+          key: ${{matrix.platform}}_${{matrix.release}}
+
+      - name: Download files
+        run: |
+          echo "8.8.8.8 invisible-mirror.net" | sudo tee -a /etc/hosts
+          echo "8.8.8.8 distfiles.dereferenced.org" | sudo tee -a /etc/hosts
+          make prepare
+          git clone https://github.com/openipc/br-cache
+          ln -s ${GITHUB_WORKSPACE}/br-cache $(ls -d output/buildroot-*)/dl
+          make BOARD=${{matrix.platform}}_${{matrix.release}} br-source
+
+      - name: Build firmware
+        run: |
+          export GIT_HASH=$(git rev-parse --short ${GITHUB_SHA})
+          export GIT_BRANCH=${GITHUB_REF_NAME}
+          echo GIT_HASH=${GIT_HASH} >> ${GITHUB_ENV}
+          echo GIT_BRANCH=${GIT_BRANCH} >> ${GITHUB_ENV}
+
+          mkdir -p /tmp/ccache
+          ln -s /tmp/ccache ${HOME}/.ccache
+          make BOARD=${{matrix.platform}}_${{matrix.release}} all
+
+          TIME=$(date -d @${SECONDS} +%M:%S)
+          echo TIME=${TIME} >> ${GITHUB_ENV}
+
+          NORFW=${GITHUB_WORKSPACE}/output/images/openipc.${{matrix.platform}}-nor-${{matrix.release}}.tgz
+          if [ -e ${NORFW} ]; then
+            echo NORFW=${NORFW} >> ${GITHUB_ENV}
+          fi
+
+          NANDFW=${GITHUB_WORKSPACE}/output/images/openipc.${{matrix.platform}}-nand-${{matrix.release}}.tgz
+          if [ -e ${NANDFW} ]; then
+            echo NANDFW=${NANDFW} >> ${GITHUB_ENV}
+          fi
+
+      - name: Upload firmware
+        if: github.event_name != 'pull_request'
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{env.TAG_NAME}}
+          files: |
+            ${{env.NORFW}}
+            ${{env.NANDFW}}
