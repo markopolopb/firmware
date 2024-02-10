@@ -5,20 +5,24 @@
 ################################################################################
 
 MAJESTIC_SITE = https://openipc.s3-eu-west-1.amazonaws.com
-MAJESTIC_SOURCE = majestic.$(MAJESTIC_FAMILY).$(MAJESTIC_RELEASE).master.tar.bz2
+MAJESTIC_SOURCE = majestic.$(MAJESTIC_FAMILY).$(MAJESTIC_VARIANT).master.tar.bz2
 MAJESTIC_LICENSE = PROPRIETARY
 MAJESTIC_LICENSE_FILES = LICENSE
 
 MAJESTIC_FAMILY = $(OPENIPC_SOC_FAMILY)
-MAJESTIC_RELEASE = $(OPENIPC_FLAVOR)
+MAJESTIC_VARIANT = $(OPENIPC_VARIANT)
 
-MAJESTIC_ULTIMATE = hi3516av100 hi3519v101 t20 t21 t40
+MAJESTIC_ULTIMATE = hi3516av100 hi3519v101
 ifneq ($(filter $(MAJESTIC_ULTIMATE),$(MAJESTIC_FAMILY)),)
-	MAJESTIC_RELEASE = lite
+	MAJESTIC_VARIANT = lite
 endif
 
-ifeq ($(MAJESTIC_RELEASE),lte)
-	MAJESTIC_RELEASE = fpv
+ifeq ($(MAJESTIC_VARIANT),lte)
+	MAJESTIC_VARIANT = fpv
+endif
+
+ifeq ($(OPENIPC_SOC_VENDOR),ingenic)
+	MAJESTIC_VARIANT = lite
 endif
 
 MAJESTIC_VENDOR = hisilicon goke ingenic sigmastar
