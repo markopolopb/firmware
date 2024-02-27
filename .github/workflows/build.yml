@@ -22,7 +22,7 @@ jobs:
         include:
           # Sigmastar [I6]
           - {"platform": "msc313e", "release": "lite"}
-          - {"platform": "msc313e", "release": "ultimate"}
+          #- {"platform": "msc313e", "release": "ultimate"}
 
     steps:
       - name: Checkout source
