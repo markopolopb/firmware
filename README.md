@@ -1,6 +1,14 @@
 ## Sigmastar/MStar MSC313E version + U-boot
 
+U-Boot 2015.01 (Dec 21 2018 - 17:50:28)
+arm-linux-gcc.br_real (Buildroot 2017.08-gf8e1e38) 4.9.4
+GNU ld (GNU Binutils) 2.28.1
 
+
+
+
+
+-----------------------
 ![OpenIPC Logo](https://cdn.themactep.com/images/logo_openipc.png)
 
 
